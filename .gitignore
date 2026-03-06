@@ -1,0 +1,36 @@
+# Cursor IDE
+.cursor/
+
+# Developer config (copy compile.local.example.bat to compile.local.bat and set your paths)
+FactionRelationships/compile.local.bat
+
+# Build output (from compile.bat; folder and zip include version from mod_info.json)
+FactionRelationships-*/
+FactionRelationships-*.zip
+
+# Java
+*.class
+*.jar
+target/
+build/
+out/
+.gradle/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Logs and temp
+*.log
+*.bak
+*.tmp
+*.temp
