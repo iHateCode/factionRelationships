@@ -1,0 +1,7 @@
+fieldID,fieldName,fieldType,defaultValue,secondaryValue,fieldDescription,minValue,maxValue,tab
+factionRelationshipsHeader,Faction Relationships,Header,Faction Relationships,,,,,General
+maxFactions,Max Factions Shown,Int,15,,Maximum number of factions to display in the overlay (sorted by relationship).,1,50,General
+showOnlyHostile,Show Only Hostile Factions,Boolean,false,,Only display factions with reputation -50 or worse (Hostile/Inhospitable). Helps focus on immediate threats.,,,General
+textSize,Text Size,Radio,Medium,"Small,Medium,Large",Text size for the overlay. Use [Large] for 4K or high-DPI displays.,,,General
+overlayKeybindMode,Overlay Keybind Mode,Radio,Toggle,"Toggle,Hold",[Toggle]: Press key to show or hide overlay. [Hold]: Overlay only visible while key is held.,,,General
+toggleOverlayKeybind,Toggle Overlay Keybind,Keycode,0,,Key to show or hide the faction relationship overlay on the campaign map. Set in Mod Settings (F2). Keycode 0 = unbound.,,,General

@@ -10,12 +10,9 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.ui.Fonts;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import lunalib.lunaSettings.LunaSettings;
 
 import java.awt.Color;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,29 +24,92 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
 
     private static final float X_PAD = 20f;
     private static final float Y_PAD = 80f;
-    private static final float LINE_HEIGHT = 14f;
     private static final int DEFAULT_MAX_FACTIONS = 15;
     private static final int MIN_MAX_FACTIONS = 1;
     private static final int MAX_MAX_FACTIONS = 50;
-    private static final String CONFIG_PATH = "config/faction_relationships_config.json";
     private static final String MOD_ID = "factionrelationships";
 
+    /** Reputation -50 in UI = -0.5f in API. */
+    private static final float HOSTILE_THRESHOLD = -0.5f;
+
     private static Integer cachedMaxFactions = null;
+    private static Boolean cachedShowOnlyHostile = null;
+    private static String cachedFont = null;
+    private static Float cachedLineHeight = null;
+
+    public static void invalidateSettingsCache() {
+        cachedMaxFactions = null;
+        cachedShowOnlyHostile = null;
+        cachedFont = null;
+        cachedLineHeight = null;
+    }
+
+    private static boolean getShowOnlyHostile() {
+        if (cachedShowOnlyHostile != null) {
+            return cachedShowOnlyHostile.booleanValue();
+        }
+        boolean value = false;
+        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
+            Boolean v = LunaSettings.getBoolean(MOD_ID, "showOnlyHostile");
+            if (v != null) {
+                value = v.booleanValue();
+            }
+        }
+        cachedShowOnlyHostile = Boolean.valueOf(value);
+        return value;
+    }
 
     private static int getMaxFactions() {
         if (cachedMaxFactions != null) {
             return cachedMaxFactions.intValue();
         }
-        try {
-            JSONObject config = Global.getSettings().loadJSON(CONFIG_PATH, MOD_ID);
-            int value = config.optInt("maxFactions", DEFAULT_MAX_FACTIONS);
-            cachedMaxFactions = Integer.valueOf(Math.max(MIN_MAX_FACTIONS, Math.min(MAX_MAX_FACTIONS, value)));
-        } catch (IOException e) {
-            cachedMaxFactions = Integer.valueOf(DEFAULT_MAX_FACTIONS);
-        } catch (JSONException e) {
-            cachedMaxFactions = Integer.valueOf(DEFAULT_MAX_FACTIONS);
+        int value = DEFAULT_MAX_FACTIONS;
+        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
+            Integer v = LunaSettings.getInt(MOD_ID, "maxFactions");
+            if (v != null) {
+                value = v.intValue();
+            }
         }
+        cachedMaxFactions = Integer.valueOf(Math.max(MIN_MAX_FACTIONS, Math.min(MAX_MAX_FACTIONS, value)));
         return cachedMaxFactions.intValue();
+    }
+
+    private static class FontAndLineHeight {
+        final String font;
+        final float lineHeight;
+
+        FontAndLineHeight(String font, float lineHeight) {
+            this.font = font;
+            this.lineHeight = lineHeight;
+        }
+    }
+
+    private static FontAndLineHeight getFontAndLineHeight() {
+        if (cachedFont != null && cachedLineHeight != null) {
+            return new FontAndLineHeight(cachedFont, cachedLineHeight.floatValue());
+        }
+        String size = "Medium";
+        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
+            String s = LunaSettings.getString(MOD_ID, "textSize");
+            if (s != null && !s.isEmpty()) {
+                size = s;
+            }
+        }
+        String font = Fonts.VICTOR_10;
+        float lineHeight = 18f;
+        if ("Small".equalsIgnoreCase(size)) {
+            font = Fonts.VICTOR_10;
+            lineHeight = 14f;
+        } else if ("Large".equalsIgnoreCase(size)) {
+            font = Fonts.ORBITRON_20AA;
+            lineHeight = 24f;
+        } else {
+            font = Fonts.ORBITRON_12;
+            lineHeight = 18f;
+        }
+        cachedFont = font;
+        cachedLineHeight = Float.valueOf(lineHeight);
+        return new FontAndLineHeight(font, lineHeight);
     }
 
     @Override
@@ -69,6 +129,13 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
 
     private void renderPanel(ViewportAPI viewport) {
         if (Global.getSector() == null || Global.getSector().getPlayerFleet() == null) {
+            return;
+        }
+        String mode = FactionRelationshipsPlugin.getOverlayKeybindMode();
+        boolean showOverlay = "Hold".equals(mode)
+            ? FactionRelationshipsPlugin.isOverlayKeyHeld()
+            : FactionRelationshipsPlugin.isOverlayVisible();
+        if (!showOverlay) {
             return;
         }
 
@@ -93,6 +160,16 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             factions.add(faction);
         }
 
+        if (getShowOnlyHostile()) {
+            List<FactionAPI> hostileOnly = new ArrayList<FactionAPI>();
+            for (FactionAPI faction : factions) {
+                if (faction.getRelToPlayer().getRel() <= HOSTILE_THRESHOLD) {
+                    hostileOnly.add(faction);
+                }
+            }
+            factions = hostileOnly;
+        }
+
         Collections.sort(factions, new Comparator<FactionAPI>() {
             @Override
             public int compare(FactionAPI a, FactionAPI b) {
@@ -110,6 +187,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
 
         float screenW = Global.getSettings().getScreenWidth();
         float screenH = Global.getSettings().getScreenHeight();
+        FontAndLineHeight fontAndLine = getFontAndLineHeight();
+        float lineHeight = fontAndLine.lineHeight;
 
         List<LabelAPI> labels = new ArrayList<LabelAPI>();
         for (int i = 0; i < count; i++) {
@@ -120,7 +199,7 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             String line = faction.getDisplayName() + "  " + formatRepValue(repValue) + "  " + levelName;
             Color color = rel.getRelColor();
 
-            LabelAPI label = Global.getSettings().createLabel(line, Fonts.VICTOR_10);
+            LabelAPI label = Global.getSettings().createLabel(line, fontAndLine.font);
             label.setColor(color);
             labels.add(label);
         }
@@ -132,8 +211,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             if (i == 0) {
                 pos.inTR(X_PAD, Y_PAD);
             } else {
-                float y = Y_PAD + i * LINE_HEIGHT;
-                pos.setLocation(screenW - X_PAD - w, screenH - y - LINE_HEIGHT);
+                float y = Y_PAD + i * lineHeight;
+                pos.setLocation(screenW - X_PAD - w, screenH - y - lineHeight);
             }
             label.render(1f);
         }

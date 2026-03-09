@@ -6,12 +6,14 @@ A [Starsector](https://fractalsoftworks.com/) mod that shows a list of factions 
 
 - **Game version**: 0.98a-RC8  
 - **Mod ID**: `factionrelationships`
+- **Dependencies**: [LazyLib](https://fractalsoftworks.com/forum/index.php?topic=12771.0) and [LunaLib](https://github.com/Lukas22041/LunaLib) (required; enable them in the launcher).
 
 ## Installation
 
-1. Download the latest release (or build from source; see below).
-2. Extract the mod folder into your Starsector `mods` directory.
-3. Enable the mod in the game launcher.
+1. Install **LazyLib** and **LunaLib** in your Starsector `mods` folder if you have not already.
+2. Download the latest release (or build from source; see below).
+3. Extract the mod folder into your Starsector `mods` directory.
+4. Enable the mod (and LazyLib, LunaLib) in the game launcher.
 
 Your `mods` folder should contain something like:
 
@@ -19,20 +21,23 @@ Your `mods` folder should contain something like:
 mods/FactionRelationships/
 ├── mod_info.json
 ├── config/
-│   └── faction_relationships_config.json
+│   └── faction_relationships_config.json   # deprecated; settings via Mod Settings
+├── data/
+│   └── config/
+│       └── LunaSettings.csv
 └── jars/
     └── FactionRelationships.jar
 ```
 
 ## Configuration
 
-Edit `config/faction_relationships_config.json` to set how many factions are shown. The `maxFactions` value can be set between 1 and 50 (default is 15).
+Configure the mod in-game via **Mod Settings** (press **F2** in campaign): max factions shown, text size, overlay keybind (toggle or hold-to-view), and optional “show only hostile factions” filter. No need to edit JSON files.
 
 ## Building from source
 
-- **Requirements**: JDK 17, a Starsector 0.98a install (for API JARs).
+- **Requirements**: JDK 17, a Starsector 0.98a install (for API JARs), and **LunaLib** and **LazyLib** installed in your game `mods` folder (the build script needs their JARs).
 - **Build**: From the repo root, run `FactionRelationships\compile.bat`.  
-  You may need to set `GAME_DIR` inside the script to your Starsector path.
+  Copy `FactionRelationships\compile.local.example.bat` to `FactionRelationships\compile.local.bat` and set `GAME_DIR` to your Starsector path (and optionally `LUNALIB` / `LAZYLIB` if you use versioned mod folders).
 - **Details**: See [FactionRelationships/COMPILATION.md](FactionRelationships/COMPILATION.md) for full build steps, project layout, and manual compile commands.
 
 ## License
