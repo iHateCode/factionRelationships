@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListener {
@@ -34,14 +35,31 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
 
     private static Integer cachedMaxFactions = null;
     private static Boolean cachedShowOnlyHostile = null;
+    private static Boolean cachedShowRelationshipChangeInOverlay = null;
     private static String cachedFont = null;
     private static Float cachedLineHeight = null;
 
     public static void invalidateSettingsCache() {
         cachedMaxFactions = null;
         cachedShowOnlyHostile = null;
+        cachedShowRelationshipChangeInOverlay = null;
         cachedFont = null;
         cachedLineHeight = null;
+    }
+
+    private static boolean getShowRelationshipChangeInOverlay() {
+        if (cachedShowRelationshipChangeInOverlay != null) {
+            return cachedShowRelationshipChangeInOverlay.booleanValue();
+        }
+        boolean value = true;
+        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
+            Boolean v = LunaSettings.getBoolean(MOD_ID, "showRelationshipChangeInOverlay");
+            if (v != null) {
+                value = v.booleanValue();
+            }
+        }
+        cachedShowRelationshipChangeInOverlay = Boolean.valueOf(value);
+        return value;
     }
 
     private static boolean getShowOnlyHostile() {
@@ -131,6 +149,13 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
         if (Global.getSector() == null || Global.getSector().getPlayerFleet() == null) {
             return;
         }
+        long autoShowExpiry = RelationshipChangeStore.getAutoShowExpiry();
+        if (autoShowExpiry > 0
+                && System.currentTimeMillis() >= autoShowExpiry
+                && FactionRelationshipsPlugin.isOverlayVisible()) {
+            FactionRelationshipsPlugin.setOverlayVisible(false);
+            RelationshipChangeStore.clearAutoShowExpiry();
+        }
         String mode = FactionRelationshipsPlugin.getOverlayKeybindMode();
         boolean showOverlay = "Hold".equals(mode)
             ? FactionRelationshipsPlugin.isOverlayKeyHeld()
@@ -185,12 +210,17 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return;
         }
 
+        RelationshipChangeStore.removeExpired();
+        Map<String, RelationshipChangeStore.RecentChange> recentChanges = RelationshipChangeStore.getRecentChanges();
+        boolean showChangeInOverlay = getShowRelationshipChangeInOverlay();
+
         float screenW = Global.getSettings().getScreenWidth();
         float screenH = Global.getSettings().getScreenHeight();
         FontAndLineHeight fontAndLine = getFontAndLineHeight();
         float lineHeight = fontAndLine.lineHeight;
 
         List<LabelAPI> labels = new ArrayList<LabelAPI>();
+        List<LabelAPI> deltaLabels = new ArrayList<LabelAPI>();
         for (int i = 0; i < count; i++) {
             FactionAPI faction = factions.get(i);
             RelationshipAPI rel = faction.getRelToPlayer();
@@ -202,20 +232,43 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             LabelAPI label = Global.getSettings().createLabel(line, fontAndLine.font);
             label.setColor(color);
             labels.add(label);
+
+            LabelAPI deltaLabel = null;
+            if (showChangeInOverlay) {
+                RelationshipChangeStore.RecentChange change = recentChanges.get(faction.getId());
+                if (change != null) {
+                    String deltaStr = formatDelta(change.delta);
+                    deltaLabel = Global.getSettings().createLabel(deltaStr, fontAndLine.font);
+                    deltaLabel.setColor(change.delta >= 0 ? new Color(100, 255, 100) : new Color(255, 100, 100));
+                }
+            }
+            deltaLabels.add(deltaLabel);
         }
 
         for (int i = 0; i < labels.size(); i++) {
             LabelAPI label = labels.get(i);
+            LabelAPI deltaLabel = deltaLabels.get(i);
             float w = label.computeTextWidth(label.getText());
+            float deltaW = (deltaLabel != null) ? deltaLabel.computeTextWidth(deltaLabel.getText()) + 4f : 0f;
+            float totalW = w + deltaW;
+            float y = screenH - (Y_PAD + (i + 1) * lineHeight);
             PositionAPI pos = label.getPosition();
-            if (i == 0) {
-                pos.inTR(X_PAD, Y_PAD);
-            } else {
-                float y = Y_PAD + i * lineHeight;
-                pos.setLocation(screenW - X_PAD - w, screenH - y - lineHeight);
-            }
+            pos.setLocation(screenW - X_PAD - totalW, y);
             label.render(1f);
+            if (deltaLabel != null) {
+                PositionAPI deltaPos = deltaLabel.getPosition();
+                deltaPos.setLocation(screenW - X_PAD - totalW + w, y);
+                deltaLabel.render(1f);
+            }
         }
+    }
+
+    private static String formatDelta(float delta) {
+        int pct = (int) Math.round(delta * 100f);
+        if (pct >= 0) {
+            return " (+" + pct + ")";
+        }
+        return " (" + pct + ")";
     }
 
     private static String formatRepValue(float rel) {

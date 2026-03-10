@@ -10,7 +10,7 @@ public class FactionRelationshipsPlugin extends BaseModPlugin {
 
     private static Logger log;
 
-    /** Overlay visibility toggle; read by renderer, written by keybind script (Toggle mode). Default true. */
+    /** Overlay visibility toggle; read by renderer, written by campaign input listener (Toggle mode). Default true. */
     private static volatile boolean overlayVisible = true;
 
     /** Key currently held; used in Hold mode so overlay shows only while key is down. */
@@ -76,11 +76,10 @@ public class FactionRelationshipsPlugin extends BaseModPlugin {
     @Override
     public void onGameLoad(boolean newGame) {
         Global.getSector().getListenerManager().addListener(new FactionRelationshipsUIRenderer(), true);
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            Global.getSector().addScript(new FactionRelationshipsKeybindScript());
-        }
+        Global.getSector().getListenerManager().addListener(new FactionRelationshipsCampaignInputListener(), true);
+        Global.getSector().addTransientListener(new FactionRelationshipChangeListener());
         if (log != null) {
-            log.info("Faction Relationships UI renderer and keybind script registered.");
+            log.info("Faction Relationships UI renderer, campaign input listener, and relationship change listener registered.");
         }
     }
 }
