@@ -39,7 +39,11 @@ FactionRelationships/
 │   └── com/factionrelationships/
 │       ├── FactionRelationshipsPlugin.java
 │       ├── FactionRelationshipsUIRenderer.java
-│       └── FactionRelationshipsKeybindScript.java
+│       ├── FactionRelationshipsCampaignInputListener.java
+│       ├── FactionRelationshipsKeybindScript.java   # stub for save compatibility
+│       ├── FactionRelationshipChangeListener.java
+│       ├── RelationshipChangeStore.java
+│       └── SystemFactionRelationshipsIntel.java
 ├── compile.local.example.bat   # copy to compile.local.bat (gitignored) to set GAME_DIR
 └── COMPILATION.md
 ```
@@ -62,7 +66,7 @@ set LUNALIB=%GAME_DIR%\mods\LunaLib\jars\LunaLib.jar
 set LAZYLIB=%GAME_DIR%\mods\LazyLib\jars\LazyLib.jar
 set CORE=%GAME_DIR%\starsector-core
 set VERSION=1.3.0
-javac -encoding UTF-8 -cp "%CORE%\starfarer.api.jar;%CORE%\starfarer_obf.jar;%CORE%\json.jar;%CORE%\log4j-1.2.9.jar;%CORE%\lwjgl.jar;%CORE%\lwjgl_util.jar;%LAZYLIB%;%LUNALIB%" -d FactionRelationships-%VERSION%\classes FactionRelationships\src\com\factionrelationships\FactionRelationshipsPlugin.java FactionRelationships\src\com\factionrelationships\FactionRelationshipsUIRenderer.java FactionRelationships\src\com\factionrelationships\FactionRelationshipsKeybindScript.java
+javac -encoding UTF-8 -cp "%CORE%\starfarer.api.jar;%CORE%\starfarer_obf.jar;%CORE%\json.jar;%CORE%\log4j-1.2.9.jar;%CORE%\lwjgl.jar;%CORE%\lwjgl_util.jar;%LAZYLIB%;%LUNALIB%" -d FactionRelationships-%VERSION%\classes FactionRelationships\src\com\factionrelationships\FactionRelationshipsPlugin.java FactionRelationships\src\com\factionrelationships\FactionRelationshipsUIRenderer.java FactionRelationships\src\com\factionrelationships\FactionRelationshipsCampaignInputListener.java FactionRelationships\src\com\factionrelationships\FactionRelationshipsKeybindScript.java FactionRelationships\src\com\factionrelationships\FactionRelationshipChangeListener.java FactionRelationships\src\com\factionrelationships\RelationshipChangeStore.java FactionRelationships\src\com\factionrelationships\SystemFactionRelationshipsIntel.java
 jar cvf FactionRelationships-%VERSION%\jars\FactionRelationships.jar -C FactionRelationships-%VERSION%\classes .
 ```
 
@@ -92,7 +96,7 @@ Set `GAME_DIR` (and optionally `LUNALIB`, `LAZYLIB`) before running (e.g. via `c
        └── FactionRelationships.jar
    ```
 
-   Configure max factions, text size, overlay keybind (toggle or hold), and hostile-only filter in **Mod Settings** (F2 in campaign).
+   Configure max factions, text size, overlay keybind (toggle or hold), hostile-only filter, relationship-change display, and auto-show overlay on change in **Mod Settings** (F2 in campaign).
 
 ## Quick Reference
 

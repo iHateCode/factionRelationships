@@ -34,7 +34,7 @@ if not exist "%OUT%" mkdir "%OUT%"
 if not exist "..\%PKG%\jars" mkdir "..\%PKG%\jars"
 
 echo Compiling...
-javac -encoding UTF-8 -cp "%CORE%\starfarer.api.jar;%CORE%\starfarer_obf.jar;%CORE%\json.jar;%CORE%\log4j-1.2.9.jar;%CORE%\lwjgl.jar;%CORE%\lwjgl_util.jar;%LAZYLIB%;%LUNALIB%" -d "%OUT%" "%SRC%\FactionRelationshipsPlugin.java" "%SRC%\FactionRelationshipsUIRenderer.java" "%SRC%\FactionRelationshipsKeybindScript.java"
+javac -encoding UTF-8 -cp "%CORE%\starfarer.api.jar;%CORE%\starfarer_obf.jar;%CORE%\json.jar;%CORE%\log4j-1.2.9.jar;%CORE%\lwjgl.jar;%CORE%\lwjgl_util.jar;%LAZYLIB%;%LUNALIB%" -d "%OUT%" "%SRC%\FactionRelationshipsPlugin.java" "%SRC%\FactionRelationshipsUIRenderer.java" "%SRC%\FactionRelationshipsCampaignInputListener.java" "%SRC%\FactionRelationshipsKeybindScript.java" "%SRC%\FactionRelationshipChangeListener.java" "%SRC%\RelationshipChangeStore.java" "%SRC%\SystemFactionRelationshipsIntel.java"
 if errorlevel 1 (
     echo Compilation failed.
     exit /b 1

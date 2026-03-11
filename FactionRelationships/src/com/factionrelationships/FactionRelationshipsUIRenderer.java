@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListener {
@@ -27,21 +28,39 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
     private static final int DEFAULT_MAX_FACTIONS = 15;
     private static final int MIN_MAX_FACTIONS = 1;
     private static final int MAX_MAX_FACTIONS = 50;
-    private static final String MOD_ID = "factionrelationships";
+    /** Factor to convert relationship value (-1..1) to display percentage. */
+    private static final float PERCENT_FACTOR = 100f;
 
     /** Reputation -50 in UI = -0.5f in API. */
     private static final float HOSTILE_THRESHOLD = -0.5f;
 
     private static Integer cachedMaxFactions = null;
     private static Boolean cachedShowOnlyHostile = null;
+    private static Boolean cachedShowRelationshipChangeInOverlay = null;
     private static String cachedFont = null;
     private static Float cachedLineHeight = null;
 
     public static void invalidateSettingsCache() {
         cachedMaxFactions = null;
         cachedShowOnlyHostile = null;
+        cachedShowRelationshipChangeInOverlay = null;
         cachedFont = null;
         cachedLineHeight = null;
+    }
+
+    private static boolean getShowRelationshipChangeInOverlay() {
+        if (cachedShowRelationshipChangeInOverlay != null) {
+            return cachedShowRelationshipChangeInOverlay.booleanValue();
+        }
+        boolean value = true;
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            Boolean v = LunaSettings.getBoolean(FactionRelationshipsPlugin.MOD_ID, "showRelationshipChangeInOverlay");
+            if (v != null) {
+                value = v.booleanValue();
+            }
+        }
+        cachedShowRelationshipChangeInOverlay = Boolean.valueOf(value);
+        return value;
     }
 
     private static boolean getShowOnlyHostile() {
@@ -49,8 +68,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return cachedShowOnlyHostile.booleanValue();
         }
         boolean value = false;
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            Boolean v = LunaSettings.getBoolean(MOD_ID, "showOnlyHostile");
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            Boolean v = LunaSettings.getBoolean(FactionRelationshipsPlugin.MOD_ID, "showOnlyHostile");
             if (v != null) {
                 value = v.booleanValue();
             }
@@ -64,8 +83,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return cachedMaxFactions.intValue();
         }
         int value = DEFAULT_MAX_FACTIONS;
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            Integer v = LunaSettings.getInt(MOD_ID, "maxFactions");
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            Integer v = LunaSettings.getInt(FactionRelationshipsPlugin.MOD_ID, "maxFactions");
             if (v != null) {
                 value = v.intValue();
             }
@@ -89,8 +108,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return new FontAndLineHeight(cachedFont, cachedLineHeight.floatValue());
         }
         String size = "Medium";
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            String s = LunaSettings.getString(MOD_ID, "textSize");
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            String s = LunaSettings.getString(FactionRelationshipsPlugin.MOD_ID, "textSize");
             if (s != null && !s.isEmpty()) {
                 size = s;
             }
@@ -130,6 +149,13 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
     private void renderPanel(ViewportAPI viewport) {
         if (Global.getSector() == null || Global.getSector().getPlayerFleet() == null) {
             return;
+        }
+        long autoShowExpiry = RelationshipChangeStore.getAutoShowExpiry();
+        if (autoShowExpiry > 0
+                && System.currentTimeMillis() >= autoShowExpiry
+                && FactionRelationshipsPlugin.isOverlayVisible()) {
+            FactionRelationshipsPlugin.setOverlayVisible(false);
+            RelationshipChangeStore.clearAutoShowExpiry();
         }
         String mode = FactionRelationshipsPlugin.getOverlayKeybindMode();
         boolean showOverlay = "Hold".equals(mode)
@@ -185,12 +211,17 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return;
         }
 
+        RelationshipChangeStore.removeExpired();
+        Map<String, RelationshipChangeStore.RecentChange> recentChanges = RelationshipChangeStore.getRecentChanges();
+        boolean showChangeInOverlay = getShowRelationshipChangeInOverlay();
+
         float screenW = Global.getSettings().getScreenWidth();
         float screenH = Global.getSettings().getScreenHeight();
         FontAndLineHeight fontAndLine = getFontAndLineHeight();
         float lineHeight = fontAndLine.lineHeight;
 
         List<LabelAPI> labels = new ArrayList<LabelAPI>();
+        List<LabelAPI> deltaLabels = new ArrayList<LabelAPI>();
         for (int i = 0; i < count; i++) {
             FactionAPI faction = factions.get(i);
             RelationshipAPI rel = faction.getRelToPlayer();
@@ -202,27 +233,51 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             LabelAPI label = Global.getSettings().createLabel(line, fontAndLine.font);
             label.setColor(color);
             labels.add(label);
+
+            LabelAPI deltaLabel = null;
+            if (showChangeInOverlay) {
+                RelationshipChangeStore.RecentChange change = recentChanges.get(faction.getId());
+                if (change != null) {
+                    String deltaStr = formatDelta(change.delta);
+                    deltaLabel = Global.getSettings().createLabel(deltaStr, fontAndLine.font);
+                    deltaLabel.setColor(change.delta >= 0 ? new Color(100, 255, 100) : new Color(255, 100, 100));
+                }
+            }
+            deltaLabels.add(deltaLabel);
         }
 
         for (int i = 0; i < labels.size(); i++) {
             LabelAPI label = labels.get(i);
+            LabelAPI deltaLabel = deltaLabels.get(i);
             float w = label.computeTextWidth(label.getText());
+            float deltaW = (deltaLabel != null) ? deltaLabel.computeTextWidth(deltaLabel.getText()) + 4f : 0f;
+            float totalW = w + deltaW;
+            float y = screenH - (Y_PAD + (i + 1) * lineHeight);
             PositionAPI pos = label.getPosition();
-            if (i == 0) {
-                pos.inTR(X_PAD, Y_PAD);
-            } else {
-                float y = Y_PAD + i * lineHeight;
-                pos.setLocation(screenW - X_PAD - w, screenH - y - lineHeight);
-            }
+            pos.setLocation(screenW - X_PAD - totalW, y);
             label.render(1f);
+            if (deltaLabel != null) {
+                PositionAPI deltaPos = deltaLabel.getPosition();
+                deltaPos.setLocation(screenW - X_PAD - totalW + w, y);
+                deltaLabel.render(1f);
+            }
         }
     }
 
-    private static String formatRepValue(float rel) {
-        int pct = (int) Math.round(rel * 100f);
-        if (pct >= 0) {
-            return "+" + pct;
+    private static String formatPercent(float value, boolean withPlus, boolean withParens) {
+        int pct = (int) Math.round(value * PERCENT_FACTOR);
+        String num = (withPlus && pct >= 0) ? ("+" + pct) : String.valueOf(pct);
+        if (withParens) {
+            return " (" + num + ")";
         }
-        return String.valueOf(pct);
+        return num;
+    }
+
+    private static String formatDelta(float delta) {
+        return " " + formatPercent(delta, true, true);
+    }
+
+    private static String formatRepValue(float rel) {
+        return formatPercent(rel, true, false);
     }
 }
