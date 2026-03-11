@@ -28,7 +28,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
     private static final int DEFAULT_MAX_FACTIONS = 15;
     private static final int MIN_MAX_FACTIONS = 1;
     private static final int MAX_MAX_FACTIONS = 50;
-    private static final String MOD_ID = "factionrelationships";
+    /** Factor to convert relationship value (-1..1) to display percentage. */
+    private static final float PERCENT_FACTOR = 100f;
 
     /** Reputation -50 in UI = -0.5f in API. */
     private static final float HOSTILE_THRESHOLD = -0.5f;
@@ -52,8 +53,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return cachedShowRelationshipChangeInOverlay.booleanValue();
         }
         boolean value = true;
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            Boolean v = LunaSettings.getBoolean(MOD_ID, "showRelationshipChangeInOverlay");
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            Boolean v = LunaSettings.getBoolean(FactionRelationshipsPlugin.MOD_ID, "showRelationshipChangeInOverlay");
             if (v != null) {
                 value = v.booleanValue();
             }
@@ -67,8 +68,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return cachedShowOnlyHostile.booleanValue();
         }
         boolean value = false;
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            Boolean v = LunaSettings.getBoolean(MOD_ID, "showOnlyHostile");
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            Boolean v = LunaSettings.getBoolean(FactionRelationshipsPlugin.MOD_ID, "showOnlyHostile");
             if (v != null) {
                 value = v.booleanValue();
             }
@@ -82,8 +83,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return cachedMaxFactions.intValue();
         }
         int value = DEFAULT_MAX_FACTIONS;
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            Integer v = LunaSettings.getInt(MOD_ID, "maxFactions");
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            Integer v = LunaSettings.getInt(FactionRelationshipsPlugin.MOD_ID, "maxFactions");
             if (v != null) {
                 value = v.intValue();
             }
@@ -107,8 +108,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return new FontAndLineHeight(cachedFont, cachedLineHeight.floatValue());
         }
         String size = "Medium";
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            String s = LunaSettings.getString(MOD_ID, "textSize");
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            String s = LunaSettings.getString(FactionRelationshipsPlugin.MOD_ID, "textSize");
             if (s != null && !s.isEmpty()) {
                 size = s;
             }
@@ -263,19 +264,20 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
         }
     }
 
-    private static String formatDelta(float delta) {
-        int pct = (int) Math.round(delta * 100f);
-        if (pct >= 0) {
-            return " (+" + pct + ")";
+    private static String formatPercent(float value, boolean withPlus, boolean withParens) {
+        int pct = (int) Math.round(value * PERCENT_FACTOR);
+        String num = (withPlus && pct >= 0) ? ("+" + pct) : String.valueOf(pct);
+        if (withParens) {
+            return " (" + num + ")";
         }
-        return " (" + pct + ")";
+        return num;
+    }
+
+    private static String formatDelta(float delta) {
+        return " " + formatPercent(delta, true, true);
     }
 
     private static String formatRepValue(float rel) {
-        int pct = (int) Math.round(rel * 100f);
-        if (pct >= 0) {
-            return "+" + pct;
-        }
-        return String.valueOf(pct);
+        return formatPercent(rel, true, false);
     }
 }

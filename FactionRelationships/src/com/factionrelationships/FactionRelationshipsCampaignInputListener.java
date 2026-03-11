@@ -26,10 +26,10 @@ public class FactionRelationshipsCampaignInputListener implements CampaignInputL
 
     @Override
     public void processCampaignInputPreCore(List<InputEventAPI> events) {
-        if (!Global.getSettings().getModManager().isModEnabled("lunalib")) {
+        if (!FactionRelationshipsPlugin.isLunaLibEnabled()) {
             return;
         }
-        Integer keycodeObj = LunaSettings.getInt("factionrelationships", "toggleOverlayKeybind");
+        Integer keycodeObj = LunaSettings.getInt(FactionRelationshipsPlugin.MOD_ID, "toggleOverlayKeybind");
         if (keycodeObj == null || keycodeObj.intValue() == 0) {
             FactionRelationshipsPlugin.setOverlayKeyHeld(false);
             return;

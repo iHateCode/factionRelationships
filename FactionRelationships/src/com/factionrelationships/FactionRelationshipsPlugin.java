@@ -8,6 +8,9 @@ import org.apache.log4j.Logger;
 
 public class FactionRelationshipsPlugin extends BaseModPlugin {
 
+    /** Mod ID for LunaSettings and mod manager; must match mod_info.json "id". */
+    public static final String MOD_ID = "factionrelationships";
+
     private static Logger log;
 
     /** Overlay visibility toggle; read by renderer, written by campaign input listener (Toggle mode). Default true. */
@@ -41,14 +44,19 @@ public class FactionRelationshipsPlugin extends BaseModPlugin {
             return cachedOverlayKeybindMode;
         }
         String mode = "Toggle";
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            String s = LunaSettings.getString("factionrelationships", "overlayKeybindMode");
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            String s = LunaSettings.getString(MOD_ID, "overlayKeybindMode");
             if (s != null && ("Hold".equalsIgnoreCase(s) || "Toggle".equalsIgnoreCase(s))) {
                 mode = "Hold".equalsIgnoreCase(s) ? "Hold" : "Toggle";
             }
         }
         cachedOverlayKeybindMode = mode;
         return mode;
+    }
+
+    /** Whether LunaLib is enabled; used for settings and keybinds. */
+    public static boolean isLunaLibEnabled() {
+        return Global.getSettings().getModManager().isModEnabled("lunalib");
     }
 
     /** Called when LunaSettings change so mode and other caches are re-read. */
@@ -60,11 +68,11 @@ public class FactionRelationshipsPlugin extends BaseModPlugin {
     public void onApplicationLoad() throws Exception {
         log = Global.getLogger(FactionRelationshipsPlugin.class);
         log.info("Faction Relationships mod loaded.");
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
             LunaSettings.addSettingsListener(new LunaSettingsListener() {
                 @Override
                 public void settingsChanged(String modID) {
-                    if ("factionrelationships".equals(modID)) {
+                    if (MOD_ID.equals(modID)) {
                         FactionRelationshipsPlugin.invalidateSettingsCache();
                         FactionRelationshipsUIRenderer.invalidateSettingsCache();
                     }

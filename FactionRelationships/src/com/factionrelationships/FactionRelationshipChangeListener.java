@@ -11,7 +11,6 @@ import lunalib.lunaSettings.LunaSettings;
  */
 public class FactionRelationshipChangeListener extends BaseCampaignEventListener {
 
-    private static final String MOD_ID = "factionrelationships";
     private static final String AUTO_SHOW_SETTING = "autoShowOverlayOnRelationshipChange";
     private static final String DISPLAY_SECONDS_SETTING = "relationshipChangeDisplaySeconds";
     private static final int DEFAULT_DISPLAY_SECONDS = 30;
@@ -23,10 +22,10 @@ public class FactionRelationshipChangeListener extends BaseCampaignEventListener
     }
 
     private static int getDisplayDurationSeconds() {
-        if (!Global.getSettings().getModManager().isModEnabled("lunalib")) {
+        if (!FactionRelationshipsPlugin.isLunaLibEnabled()) {
             return DEFAULT_DISPLAY_SECONDS;
         }
-        Integer v = LunaSettings.getInt(MOD_ID, DISPLAY_SECONDS_SETTING);
+        Integer v = LunaSettings.getInt(FactionRelationshipsPlugin.MOD_ID, DISPLAY_SECONDS_SETTING);
         if (v == null) {
             return DEFAULT_DISPLAY_SECONDS;
         }
@@ -40,8 +39,8 @@ public class FactionRelationshipChangeListener extends BaseCampaignEventListener
     public void reportPlayerReputationChange(String factionId, float delta) {
         long durationMs = getDisplayDurationSeconds() * 1000L;
         RelationshipChangeStore.record(factionId, delta, durationMs);
-        if (Global.getSettings().getModManager().isModEnabled("lunalib")) {
-            Boolean autoShow = LunaSettings.getBoolean(MOD_ID, AUTO_SHOW_SETTING);
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            Boolean autoShow = LunaSettings.getBoolean(FactionRelationshipsPlugin.MOD_ID, AUTO_SHOW_SETTING);
             if (Boolean.TRUE.equals(autoShow)) {
                 FactionRelationshipsPlugin.setOverlayVisible(true);
                 RelationshipChangeStore.setAutoShowExpiry(System.currentTimeMillis() + durationMs);
