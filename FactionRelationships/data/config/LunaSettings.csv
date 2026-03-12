@@ -1,10 +1,12 @@
 fieldID,fieldName,fieldType,defaultValue,secondaryValue,fieldDescription,minValue,maxValue,tab
-factionRelationshipsHeader,Faction Relationships,Header,Faction Relationships,,,,,General
 maxFactions,Max Factions Shown,Int,15,,Maximum number of factions to display in the overlay (sorted by relationship).,1,50,General
 showOnlyHostile,Show Only Hostile Factions,Boolean,false,,Only display factions with reputation -50 or worse (Hostile/Inhospitable). Helps focus on immediate threats.,,,General
+showOnlyFactionsInSystem,Show Only Factions in Current System,Boolean,false,,Only show factions that have a market in the current star system. In hyperspace, behavior is controlled by the option below.,,,General
+showFullListInHyperspace,In Hyperspace: Show Full List,Boolean,true,,When "Show only factions in current system" is on, in hyperspace show the full faction list instead of none. Reduces clutter in-system while avoiding an empty overlay while traveling.,,,General
 textSize,Text Size,Radio,Medium,"Small,Medium,Large",Text size for the overlay. Use [Large] for 4K or high-DPI displays.,,,General
 overlayKeybindMode,Overlay Keybind Mode,Radio,Toggle,"Toggle,Hold",[Toggle]: Press key to show or hide overlay. [Hold]: Overlay only visible while key is held.,,,General
-toggleOverlayKeybind,Toggle Overlay Keybind,Keycode,0,,Key to show or hide the faction relationship overlay on the campaign map. Set in Mod Settings (F2). Keycode 0 = unbound.,,,General
+toggleOverlayKeybind,Toggle Overlay Keybind,Keycode,66,,Key to show or hide the faction relationship overlay on the campaign map. Set in Mod Settings (F2). Keycode 0 = unbound. Default: B.,,,General
 showRelationshipChangeInOverlay,Show Relationship Change in Overlay,Boolean,true,,"When a faction relationship changes, show the change (e.g. +5 or -10) next to that faction for the duration set below.",,,General
-relationshipChangeDisplaySeconds,Relationship Change Display (seconds),Int,30,,"How long to show the change next to a faction in the overlay, in seconds.",5,120,General
-autoShowOverlayOnRelationshipChange,Auto-Show Overlay When Relationship Changes,Boolean,false,,"When a faction relationship changes, automatically show the overlay (for the duration set above).",,,General
+relationshipChangeDisplaySeconds,Relationship Change Display (seconds),Int,10,,"How long to show the change next to a faction in the overlay, in seconds.",5,120,General
+autoShowOverlayOnRelationshipChange,Auto-Show Overlay When Relationship Changes,Boolean,true,,"When a faction relationship changes, automatically show the overlay (for the duration set above).",,,General
+autoHideOverlayAfterSeconds,Auto-Hide Overlay After (seconds),Int,10,,"0 = overlay stays until you hide it (relationship-change auto-show still uses the duration above). When > 0, overlay auto-hides after this many seconds whenever it is shown (hotkey, location change, or relationship change).",0,300,General

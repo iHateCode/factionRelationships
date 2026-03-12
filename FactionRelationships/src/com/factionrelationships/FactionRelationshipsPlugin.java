@@ -59,6 +59,19 @@ public class FactionRelationshipsPlugin extends BaseModPlugin {
         return Global.getSettings().getModManager().isModEnabled("lunalib");
     }
 
+    /** Seconds after which to auto-hide the overlay when shown (0 = only relationship-change uses its duration). */
+    public static int getAutoHideOverlayAfterSeconds() {
+        if (!isLunaLibEnabled()) {
+            return 0;
+        }
+        Integer v = LunaSettings.getInt(MOD_ID, "autoHideOverlayAfterSeconds");
+        if (v == null || v.intValue() <= 0) {
+            return 0;
+        }
+        int sec = Math.min(300, v.intValue());
+        return sec;
+    }
+
     /** Called when LunaSettings change so mode and other caches are re-read. */
     public static void invalidateSettingsCache() {
         cachedOverlayKeybindMode = null;

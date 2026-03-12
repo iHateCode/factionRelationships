@@ -42,11 +42,18 @@ public class FactionRelationshipsCampaignInputListener implements CampaignInputL
                 continue;
             }
             if (event.isKeyDownEvent() && event.getEventValue() == keycode) {
-                RelationshipChangeStore.clearAutoShowExpiry();
                 if ("Hold".equals(mode)) {
+                    RelationshipChangeStore.clearAutoShowExpiry();
                     FactionRelationshipsPlugin.setOverlayKeyHeld(true);
                 } else {
-                    FactionRelationshipsPlugin.setOverlayVisible(!FactionRelationshipsPlugin.isOverlayVisible());
+                    boolean willBeVisible = !FactionRelationshipsPlugin.isOverlayVisible();
+                    FactionRelationshipsPlugin.setOverlayVisible(willBeVisible);
+                    int autoHideSec = FactionRelationshipsPlugin.getAutoHideOverlayAfterSeconds();
+                    if (willBeVisible && autoHideSec > 0) {
+                        RelationshipChangeStore.setAutoShowExpiry(System.currentTimeMillis() + autoHideSec * 1000L);
+                    } else if (!willBeVisible) {
+                        RelationshipChangeStore.clearAutoShowExpiry();
+                    }
                 }
                 event.consume();
                 break;
