@@ -25,13 +25,15 @@ if not exist "%LAZYLIB%" (
 REM Read version from mod_info.json for package and zip names
 for /f "delims=" %%v in ('powershell -NoProfile -Command "(Get-Content '%~dp0mod_info.json' -Raw | ConvertFrom-Json).version"') do set VERSION=%%v
 set PKG=FactionRelationships-%VERSION%
+set DIST=..\dist
 
 set SRC=src\com\factionrelationships
-set OUT=..\%PKG%\classes
-set JAR=..\%PKG%\jars\FactionRelationships.jar
+set OUT=%DIST%\%PKG%\classes
+set JAR=%DIST%\%PKG%\jars\FactionRelationships.jar
 
+if not exist "%DIST%" mkdir "%DIST%"
 if not exist "%OUT%" mkdir "%OUT%"
-if not exist "..\%PKG%\jars" mkdir "..\%PKG%\jars"
+if not exist "%DIST%\%PKG%\jars" mkdir "%DIST%\%PKG%\jars"
 
 echo Compiling...
 javac -encoding UTF-8 -cp "%CORE%\starfarer.api.jar;%CORE%\starfarer_obf.jar;%CORE%\json.jar;%CORE%\log4j-1.2.9.jar;%CORE%\lwjgl.jar;%CORE%\lwjgl_util.jar;%LAZYLIB%;%LUNALIB%" -d "%OUT%" "%SRC%\FactionRelationshipsPlugin.java" "%SRC%\FactionRelationshipsUIRenderer.java" "%SRC%\FactionRelationshipsCampaignInputListener.java" "%SRC%\FactionRelationshipsKeybindScript.java" "%SRC%\FactionRelationshipChangeListener.java" "%SRC%\RelationshipChangeStore.java" "%SRC%\SystemFactionRelationshipsIntel.java"
@@ -48,11 +50,11 @@ if errorlevel 1 (
 )
 
 echo Copying mod_info.json, config, and data to package...
-copy /Y "mod_info.json" "..\%PKG%\mod_info.json" >nul
-if exist "config" xcopy /E /I /Y "config" "..\%PKG%\config" >nul
-if exist "data" xcopy /E /I /Y "data" "..\%PKG%\data" >nul
+copy /Y "mod_info.json" "%DIST%\%PKG%\mod_info.json" >nul
+if exist "config" xcopy /E /I /Y "config" "%DIST%\%PKG%\config" >nul
+if exist "data" xcopy /E /I /Y "data" "%DIST%\%PKG%\data" >nul
 
 echo Creating %PKG%.zip...
-powershell -NoProfile -Command "Compress-Archive -Path '..\%PKG%' -DestinationPath '..\%PKG%.zip' -Force"
+powershell -NoProfile -Command "Compress-Archive -Path '%DIST%\%PKG%' -DestinationPath '%DIST%\%PKG%.zip' -Force"
 
-echo Done. Install by copying %PKG% to Starsector\mods\FactionRelationships\ (or extract %PKG%.zip into mods)
+echo Done. Output in dist\%PKG%\ and dist\%PKG%.zip. Install by copying to Starsector\mods\FactionRelationships\ (or extract the zip into mods)

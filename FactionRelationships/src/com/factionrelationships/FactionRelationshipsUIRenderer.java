@@ -2,6 +2,7 @@ package com.factionrelationships;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.FactionAPI;
+import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
@@ -37,15 +38,29 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
     private static Integer cachedMaxFactions = null;
     private static Boolean cachedShowOnlyHostile = null;
     private static Boolean cachedShowRelationshipChangeInOverlay = null;
+    private static Boolean cachedShowOnlyFactionsInSystem = null;
+    private static Boolean cachedShowFullListInHyperspace = null;
     private static String cachedFont = null;
     private static Float cachedLineHeight = null;
+
+    /** Cache for "show only in system": only rebuild when location or settings change. */
+    private static LocationAPI cachedFactionIdsLocation = null;
+    private static Set<String> cachedFactionIdsForLocation = null;
+
+    /** When "show only in system" is on (Toggle mode), we auto-show the overlay when location changes. */
+    private static LocationAPI lastSeenLocationForAutoShow = null;
 
     public static void invalidateSettingsCache() {
         cachedMaxFactions = null;
         cachedShowOnlyHostile = null;
         cachedShowRelationshipChangeInOverlay = null;
+        cachedShowOnlyFactionsInSystem = null;
+        cachedShowFullListInHyperspace = null;
         cachedFont = null;
         cachedLineHeight = null;
+        cachedFactionIdsLocation = null;
+        cachedFactionIdsForLocation = null;
+        lastSeenLocationForAutoShow = null;
     }
 
     private static boolean getShowRelationshipChangeInOverlay() {
@@ -75,6 +90,36 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             }
         }
         cachedShowOnlyHostile = Boolean.valueOf(value);
+        return value;
+    }
+
+    private static boolean getShowOnlyFactionsInSystem() {
+        if (cachedShowOnlyFactionsInSystem != null) {
+            return cachedShowOnlyFactionsInSystem.booleanValue();
+        }
+        boolean value = false;
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            Boolean v = LunaSettings.getBoolean(FactionRelationshipsPlugin.MOD_ID, "showOnlyFactionsInSystem");
+            if (v != null) {
+                value = v.booleanValue();
+            }
+        }
+        cachedShowOnlyFactionsInSystem = Boolean.valueOf(value);
+        return value;
+    }
+
+    private static boolean getShowFullListInHyperspace() {
+        if (cachedShowFullListInHyperspace != null) {
+            return cachedShowFullListInHyperspace.booleanValue();
+        }
+        boolean value = true;
+        if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
+            Boolean v = LunaSettings.getBoolean(FactionRelationshipsPlugin.MOD_ID, "showFullListInHyperspace");
+            if (v != null) {
+                value = v.booleanValue();
+            }
+        }
+        cachedShowFullListInHyperspace = Boolean.valueOf(value);
         return value;
     }
 
@@ -131,6 +176,52 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
         return new FontAndLineHeight(font, lineHeight);
     }
 
+    private static Set<String> buildSetFromAllMarkets() {
+        Set<String> out = new HashSet<String>();
+        EconomyAPI economy = Global.getSector().getEconomy();
+        if (economy != null) {
+            for (MarketAPI market : economy.getMarketsCopy()) {
+                if (market.getFaction() != null) {
+                    out.add(market.getFactionId());
+                }
+            }
+        }
+        return out;
+    }
+
+    private static Set<String> getFactionIdsToShow() {
+        if (!getShowOnlyFactionsInSystem()) {
+            return buildSetFromAllMarkets();
+        }
+
+        LocationAPI loc = Global.getSector().getPlayerFleet().getContainingLocation();
+        if (loc == null || loc.isHyperspace()) {
+            if (getShowFullListInHyperspace()) {
+                return buildSetFromAllMarkets();
+            }
+            return new HashSet<String>();
+        }
+
+        if (loc == cachedFactionIdsLocation && cachedFactionIdsForLocation != null) {
+            return cachedFactionIdsForLocation;
+        }
+        Set<String> factionIds = new HashSet<String>();
+        EconomyAPI economy = Global.getSector().getEconomy();
+        if (economy != null) {
+            List<MarketAPI> marketsInLoc = economy.getMarkets(loc);
+            if (marketsInLoc != null) {
+                for (MarketAPI market : marketsInLoc) {
+                    if (market != null && market.getFaction() != null) {
+                        factionIds.add(market.getFactionId());
+                    }
+                }
+            }
+        }
+        cachedFactionIdsLocation = loc;
+        cachedFactionIdsForLocation = factionIds;
+        return factionIds;
+    }
+
     @Override
     public void renderInUICoordsBelowUI(ViewportAPI viewport) {
         // no-op; draw above UI
@@ -158,6 +249,17 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             RelationshipChangeStore.clearAutoShowExpiry();
         }
         String mode = FactionRelationshipsPlugin.getOverlayKeybindMode();
+        if (getShowOnlyFactionsInSystem() && "Toggle".equals(mode)) {
+            LocationAPI loc = Global.getSector().getPlayerFleet().getContainingLocation();
+            if (loc != lastSeenLocationForAutoShow) {
+                FactionRelationshipsPlugin.setOverlayVisible(true);
+                int autoHideSec = FactionRelationshipsPlugin.getAutoHideOverlayAfterSeconds();
+                if (autoHideSec > 0) {
+                    RelationshipChangeStore.setAutoShowExpiry(System.currentTimeMillis() + autoHideSec * 1000L);
+                }
+            }
+            lastSeenLocationForAutoShow = loc;
+        }
         boolean showOverlay = "Hold".equals(mode)
             ? FactionRelationshipsPlugin.isOverlayKeyHeld()
             : FactionRelationshipsPlugin.isOverlayVisible();
@@ -165,15 +267,7 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return;
         }
 
-        Set<String> factionIdsWithMarkets = new HashSet<String>();
-        EconomyAPI economy = Global.getSector().getEconomy();
-        if (economy != null) {
-            for (MarketAPI market : economy.getMarketsCopy()) {
-                if (market.getFaction() != null) {
-                    factionIdsWithMarkets.add(market.getFactionId());
-                }
-            }
-        }
+        Set<String> factionIdsWithMarkets = getFactionIdsToShow();
 
         List<FactionAPI> factions = new ArrayList<FactionAPI>();
         for (FactionAPI faction : Global.getSector().getAllFactions()) {
