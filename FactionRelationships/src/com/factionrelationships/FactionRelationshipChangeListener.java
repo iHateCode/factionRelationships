@@ -43,7 +43,9 @@ public class FactionRelationshipChangeListener extends BaseCampaignEventListener
             Boolean autoShow = LunaSettings.getBoolean(FactionRelationshipsPlugin.MOD_ID, AUTO_SHOW_SETTING);
             if (Boolean.TRUE.equals(autoShow)) {
                 FactionRelationshipsPlugin.setOverlayVisible(true);
-                RelationshipChangeStore.setAutoShowExpiry(System.currentTimeMillis() + durationMs);
+                int autoHideSec = FactionRelationshipsPlugin.getAutoHideOverlayAfterSeconds();
+                long hideAfterMs = (autoHideSec > 0) ? (autoHideSec * 1000L) : durationMs;
+                RelationshipChangeStore.setAutoShowExpiry(System.currentTimeMillis() + hideAfterMs);
             }
         }
     }

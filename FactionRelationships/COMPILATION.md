@@ -48,7 +48,7 @@ FactionRelationships/
 └── COMPILATION.md
 ```
 
-Output: `FactionRelationships-<version>/` (folder and zip), where `<version>` comes from `mod_info.json`. Contains `classes/`, `jars/FactionRelationships.jar`, `config/`, and `data/`. In-game settings and keybind are configured via **Mod Settings** (F2 in campaign) under this mod's section.
+Output: written to **`dist/`** at the repo root (gitignored). The build produces `dist/FactionRelationships-<version>/` (folder) and `dist/FactionRelationships-<version>.zip`, where `<version>` comes from `mod_info.json`. Each package contains `classes/`, `jars/FactionRelationships.jar`, `config/`, and `data/`. In-game settings and keybind are configured via **Mod Settings** (F2 in campaign) under this mod's section.
 
 ## Compile
 
@@ -74,13 +74,13 @@ Set `GAME_DIR` (and optionally `LUNALIB`, `LAZYLIB`) before running (e.g. via `c
 
 ## Package and Install
 
-1. The build script copies `mod_info.json` and config into the versioned package folder (e.g. `FactionRelationships-1.0.0/`).
+1. The build script copies `mod_info.json` and config into the versioned package folder under `dist/` (e.g. `dist/FactionRelationships-1.0.0/`).
 2. Copy that folder into your game `mods` folder, then rename to `FactionRelationships` for the game to load it, or use the zip:
 
    ```
-   xcopy /E /I FactionRelationships-1.0.0 "YOUR_STARSECTOR_PATH\mods\FactionRelationships\"
+   xcopy /E /I dist\FactionRelationships-1.0.0 "YOUR_STARSECTOR_PATH\mods\FactionRelationships\"
    ```
-   Or extract `FactionRelationships-1.0.0.zip` into `mods` and rename the extracted folder to `FactionRelationships`.
+   Or extract `dist/FactionRelationships-1.0.0.zip` into `mods` and rename the extracted folder to `FactionRelationships`.
 
 3. Final layout in your game `mods` folder:
 
@@ -96,10 +96,10 @@ Set `GAME_DIR` (and optionally `LUNALIB`, `LAZYLIB`) before running (e.g. via `c
        └── FactionRelationships.jar
    ```
 
-   Configure max factions, text size, overlay keybind (toggle or hold), hostile-only filter, relationship-change display, and auto-show overlay on change in **Mod Settings** (F2 in campaign).
+   Configure max factions, text size, overlay keybind (toggle or hold), hostile-only filter, show-only-factions-in-current-system (and hyperspace fallback), relationship-change display, auto-show overlay on change, and optional auto-hide overlay after N seconds in **Mod Settings** (F2 in campaign).
 
 ## Quick Reference
 
 - **Game directory**: Set `GAME_DIR` in `compile.local.bat` (recommended) or in `compile.bat` / manual commands. Optionally set `LUNALIB` and `LAZYLIB` in `compile.local.bat` if you use versioned LunaLib/LazyLib folders.
 - **Source**: `FactionRelationships/src/com/factionrelationships/`
-- **Output**: `FactionRelationships-<version>/` and `FactionRelationships-<version>.zip` (version from `mod_info.json`); JAR at `jars/FactionRelationships.jar` inside the package.
+- **Output**: `dist/FactionRelationships-<version>/` and `dist/FactionRelationships-<version>.zip` (version from `mod_info.json`); JAR at `jars/FactionRelationships.jar` inside the package. The `dist/` folder is gitignored.

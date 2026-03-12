@@ -31,7 +31,7 @@ mods/FactionRelationships/
 
 ## Configuration
 
-Configure the mod in-game via **Mod Settings** (press **F2** in campaign): max factions shown, text size, overlay keybind (toggle or hold-to-view), and optional “show only hostile factions” filter, relationship-change display in overlay (duration configurable, default 30 seconds), and optional auto-show overlay when a relationship changes (when enabled, the overlay auto-hides after the same configured duration). No need to edit JSON files.
+Configure the mod in-game via **Mod Settings** (press **F2** in campaign): max factions shown, text size, overlay keybind (toggle or hold-to-view), and optional “show only hostile factions” filter, optional "show only factions in current system" (and in hyperspace: show full list or none), relationship-change display in overlay (duration configurable, default 30 seconds), optional auto-show overlay when a relationship changes, and optional auto-hide overlay after a set number of seconds (when > 0, applies whenever the overlay is shown: hotkey, location change, or relationship change). No need to edit JSON files.
 
 ## Building from source
 
