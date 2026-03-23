@@ -49,8 +49,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Copying mod_info.json, config, and data to package...
+echo Copying mod_info.json, version file, config, and data to package...
 copy /Y "mod_info.json" "%DIST%\%PKG%\mod_info.json" >nul
+if exist "FactionRelationships.version" copy /Y "FactionRelationships.version" "%DIST%\%PKG%\FactionRelationships.version" >nul
 if exist "config" xcopy /E /I /Y "config" "%DIST%\%PKG%\config" >nul
 if exist "data" xcopy /E /I /Y "data" "%DIST%\%PKG%\data" >nul
 

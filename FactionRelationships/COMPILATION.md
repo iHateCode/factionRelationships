@@ -30,6 +30,7 @@ To avoid editing `compile.bat` and to keep your local paths out of the repo:
 ```
 FactionRelationships/
 ├── mod_info.json
+├── FactionRelationships.version   # Version Checker metadata (optional; copied into dist)
 ├── config/
 │   └── faction_relationships_config.json   # deprecated; settings via LunaLib (see data/config)
 ├── data/
@@ -87,6 +88,7 @@ Set `GAME_DIR` (and optionally `LUNALIB`, `LAZYLIB`) before running (e.g. via `c
    ```
    mods\FactionRelationships\
    ├── mod_info.json
+   ├── FactionRelationships.version
    ├── config\
    │   └── faction_relationships_config.json
    ├── data\
