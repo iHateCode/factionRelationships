@@ -2,11 +2,11 @@
     "masterVersionFile": "https://raw.githubusercontent.com/iHateCode/factionRelationships/main/FactionRelationships/FactionRelationships.version",
     "modName": "Faction Relationships",
     "modThreadId": 35013,
-    "directDownloadURL": "https://github.com/iHateCode/factionRelationships/releases/download/v1.5.10/FactionRelationships-1.5.10.zip",
+    "directDownloadURL": "https://github.com/iHateCode/factionRelationships/releases/latest/download/FactionRelationships.zip",
     "modVersion":
     {
         "major": 1,
         "minor": 5,
-        "patch": 10
+        "patch": 11
     }
 }
