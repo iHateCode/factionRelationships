@@ -33,6 +33,27 @@ mods/FactionRelationships/
 
 Configure the mod in-game via **Mod Settings** (press **F2** in campaign): max factions shown, text size, overlay keybind (toggle or hold-to-view), and optional “show only hostile factions” filter, optional "show only factions in current system" (and in hyperspace: show full list or none), relationship-change display in overlay (duration configurable, default 30 seconds), optional auto-show overlay when a relationship changes, and optional auto-hide overlay after a set number of seconds (when > 0, applies whenever the overlay is shown: hotkey, location change, or relationship change). No need to edit JSON files.
 
+## Version Checker release checklist
+
+Use this checklist for every release so update checks keep working:
+
+1. Keep versions in sync:
+  - `FactionRelationships/mod_info.json` -> `"version": "X.Y.Z"`
+  - `FactionRelationships/FactionRelationships.version` -> `modVersion.major/minor/patch = X/Y/Z`
+2. Keep `masterVersionFile` in `FactionRelationships/FactionRelationships.version` pointing to the raw GitHub URL for that same file on your default branch.
+3. Ensure the mod package includes both:
+  - `FactionRelationships/FactionRelationships.version`
+  - `FactionRelationships/data/config/version/version_files.csv` with:
+
+  ```csv
+  version file
+  FactionRelationships.version
+  ```
+
+4. Build with `FactionRelationships/compile.bat` (this produces both `dist/FactionRelationships-X.Y.Z.zip` and `dist/FactionRelationships.zip`).
+5. Attach `FactionRelationships.zip` to the GitHub release if `directDownloadURL` uses `.../releases/latest/download/FactionRelationships.zip`.
+6. Publish the release tag matching the same version (`vX.Y.Z`) so local installs can detect an update correctly.
+
 ## Building from source
 
 - **Requirements**: JDK 17, a Starsector 0.98a install (for API JARs), and **LunaLib** and **LazyLib** installed in your game `mods` folder (the build script needs their JARs).

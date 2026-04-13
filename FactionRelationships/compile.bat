@@ -58,4 +58,7 @@ if exist "data" xcopy /E /I /Y "data" "%DIST%\%PKG%\data" >nul
 echo Creating %PKG%.zip...
 powershell -NoProfile -Command "Compress-Archive -Path '%DIST%\%PKG%' -DestinationPath '%DIST%\%PKG%.zip' -Force"
 
+echo Creating FactionRelationships.zip...
+powershell -NoProfile -Command "Compress-Archive -Path '%DIST%\%PKG%' -DestinationPath '%DIST%\FactionRelationships.zip' -Force"
+
 echo Done. Output in dist\%PKG%\ and dist\%PKG%.zip. Install by copying to Starsector\mods\FactionRelationships\ (or extract the zip into mods)
