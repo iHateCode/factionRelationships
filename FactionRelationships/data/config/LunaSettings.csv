@@ -10,3 +10,6 @@ showRelationshipChangeInOverlay,Show Relationship Change in Overlay,Boolean,true
 relationshipChangeDisplaySeconds,Relationship Change Display (seconds),Int,10,,"How long to show the change next to a faction in the overlay, in seconds.",5,120,General
 autoShowOverlayOnRelationshipChange,Auto-Show Overlay When Relationship Changes,Boolean,true,,"When a faction relationship changes, automatically show the overlay (for the duration set above).",,,General
 autoHideOverlayAfterSeconds,Auto-Hide Overlay After (seconds),Int,10,,"0 = overlay stays until you hide it (relationship-change auto-show still uses the duration above). When > 0, overlay auto-hides after this many seconds whenever it is shown (hotkey, location change, or relationship change).",0,300,General
+timerEnabled,Enable Periodic Relationship Checks,Boolean,true,,Automatically check for faction relationship changes on a fixed schedule.,,,General
+timerMode,Periodic Check Mode,Radio,REAL_SECONDS,"REAL_SECONDS,IN_GAME_DAY",[REAL_SECONDS]: Check every N real-world seconds. [IN_GAME_DAY]: Check once per in-game day.,,,General
+realSecondsInterval,Check Interval (seconds),Int,5,,How often (in real seconds) to check for relationship changes when mode is REAL_SECONDS.,1,60,General

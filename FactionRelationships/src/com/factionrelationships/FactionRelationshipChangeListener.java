@@ -35,8 +35,7 @@ public class FactionRelationshipChangeListener extends BaseCampaignEventListener
         return sec;
     }
 
-    @Override
-    public void reportPlayerReputationChange(String factionId, float delta) {
+    public static void recordRelationshipChange(String factionId, float delta) {
         long durationMs = getDisplayDurationSeconds() * 1000L;
         RelationshipChangeStore.record(factionId, delta, durationMs);
         if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
@@ -56,5 +55,10 @@ public class FactionRelationshipChangeListener extends BaseCampaignEventListener
             return;
         }
         reportPlayerReputationChange(person.getFaction().getId(), delta);
+    }
+
+    @Override
+    public void reportPlayerReputationChange(String factionId, float delta) {
+        recordRelationshipChange(factionId, delta);
     }
 }

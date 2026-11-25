@@ -99,8 +99,9 @@ public class FactionRelationshipsPlugin extends BaseModPlugin {
         Global.getSector().getListenerManager().addListener(new FactionRelationshipsUIRenderer(), true);
         Global.getSector().getListenerManager().addListener(new FactionRelationshipsCampaignInputListener(), true);
         Global.getSector().addTransientListener(new FactionRelationshipChangeListener());
+        Global.getSector().addTransientScript(new FactionRelationshipsTimerScript());
         if (log != null) {
-            log.info("Faction Relationships UI renderer, campaign input listener, and relationship change listener registered.");
+            log.info("Faction Relationships UI renderer, campaign input listener, relationship change listener, and timer script registered.");
         }
     }
 }
