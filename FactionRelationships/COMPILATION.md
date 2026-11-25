@@ -5,25 +5,25 @@
 **Faction Relationships** – A Starsector mod that shows a list of factions and their relationship with the player on the main navigation screen.
 
 - **Mod ID**: `factionrelationships`
-- **Game Version**: `0.98a-RC8`
+- **Game Version**: `0.98.5a-RC9`
 - **Mod Plugin**: `com.factionrelationships.FactionRelationshipsPlugin`
 - **Dependencies**: LazyLib and LunaLib (required at runtime and for compilation).
 
 ## Prerequisites
 
-1. **JDK 17** – Starsector 0.98a uses Java 17. Install JDK 17 and run `javac -version`.
+1. **JDK 17** – Starsector 0.98.5a uses Java 17. Install JDK 17 and run `javac -version`.
 2. **Starsector** – JARs are taken from your game install (the folder that contains `starsector-core`).
-3. **LunaLib and LazyLib** – Install both mods in your Starsector `mods` folder. The compile script looks for `mods/LunaLib/jars/LunaLib.jar` and `mods/LazyLib/jars/LazyLib.jar` by default. If your mod folders use versioned names (e.g. `LunaLib-2.0.5`, `LazyLib-3.0.0`), set `LUNALIB` and `LAZYLIB` in `compile.local.bat` to point at those JARs (see Developer config below). Required for compilation and at runtime.
+3. **LunaLib and LazyLib** – Install both mods in your Starsector `mods` folder. The compile script looks for `mods/LunaLib/jars/LunaLib.jar` and `mods/LazyLib/jars/LazyLib.jar` by default. If your mod folders use versioned names (e.g. `LunaLib-2.0.5`, `LazyLib-3.0.0`), set `$LunaLib` and `$LazyLib` in `compile.local.ps1` to point at those JARs (see Developer config below). Required for compilation and at runtime.
 
 ## Developer config (optional)
 
-To avoid editing `compile.bat` and to keep your local paths out of the repo:
+To avoid editing `compile.ps1` and to keep your local paths out of the repo:
 
-1. Copy `FactionRelationships/compile.local.example.bat` to `FactionRelationships/compile.local.bat`.
-2. Edit `compile.local.bat` and set `GAME_DIR` to your Starsector install directory.
-3. If LunaLib or LazyLib use versioned folder names (e.g. `LunaLib-2.0.5`), set `LUNALIB` and `LAZYLIB` to the full paths to their JARs so the build can find them.
+1. Copy `FactionRelationships/compile.local.example.ps1` to `FactionRelationships/compile.local.ps1`.
+2. Edit `compile.local.ps1` and set `$GameDir` to your Starsector install directory.
+3. If LunaLib or LazyLib use versioned folder names (e.g. `LunaLib-2.0.5`), uncomment and set `$LunaLib` and `$LazyLib` to the full paths to their JARs.
 
-`compile.local.bat` is gitignored; only the example file is committed. The main `compile.bat` loads it automatically when present.
+`compile.local.ps1` is gitignored; only the example file is committed. `compile.ps1` loads it automatically when present.
 
 ## Project Structure
 
@@ -45,7 +45,7 @@ FactionRelationships/
 │       ├── FactionRelationshipChangeListener.java
 │       ├── RelationshipChangeStore.java
 │       └── SystemFactionRelationshipsIntel.java
-├── compile.local.example.bat   # copy to compile.local.bat (gitignored) to set GAME_DIR
+├── compile.local.example.ps1   # copy to compile.local.ps1 (gitignored) to set $GameDir
 └── COMPILATION.md
 ```
 
@@ -53,25 +53,11 @@ Output: written to **`dist/`** at the repo root (gitignored). The build produces
 
 ## Compile
 
-From the repo root, run the build script:
+From the repo root:
 
-```batch
-FactionRelationships\compile.bat
+```powershell
+powershell -ExecutionPolicy Bypass -File FactionRelationships\compile.ps1
 ```
-
-Or manually (set `LUNALIB` and `LAZYLIB` if using versioned mod folders):
-
-```batch
-set GAME_DIR=YOUR_STARSECTOR_PATH
-set LUNALIB=%GAME_DIR%\mods\LunaLib\jars\LunaLib.jar
-set LAZYLIB=%GAME_DIR%\mods\LazyLib\jars\LazyLib.jar
-set CORE=%GAME_DIR%\starsector-core
-set VERSION=1.3.0
-javac -encoding UTF-8 -cp "%CORE%\starfarer.api.jar;%CORE%\starfarer_obf.jar;%CORE%\json.jar;%CORE%\log4j-1.2.9.jar;%CORE%\lwjgl.jar;%CORE%\lwjgl_util.jar;%LAZYLIB%;%LUNALIB%" -d FactionRelationships-%VERSION%\classes FactionRelationships\src\com\factionrelationships\FactionRelationshipsPlugin.java FactionRelationships\src\com\factionrelationships\FactionRelationshipsUIRenderer.java FactionRelationships\src\com\factionrelationships\FactionRelationshipsCampaignInputListener.java FactionRelationships\src\com\factionrelationships\FactionRelationshipsKeybindScript.java FactionRelationships\src\com\factionrelationships\FactionRelationshipChangeListener.java FactionRelationships\src\com\factionrelationships\RelationshipChangeStore.java FactionRelationships\src\com\factionrelationships\SystemFactionRelationshipsIntel.java
-jar cvf FactionRelationships-%VERSION%\jars\FactionRelationships.jar -C FactionRelationships-%VERSION%\classes .
-```
-
-Set `GAME_DIR` (and optionally `LUNALIB`, `LAZYLIB`) before running (e.g. via `compile.local.bat` as above, or in the batch session).
 
 ## Package and Install
 
@@ -102,6 +88,6 @@ Set `GAME_DIR` (and optionally `LUNALIB`, `LAZYLIB`) before running (e.g. via `c
 
 ## Quick Reference
 
-- **Game directory**: Set `GAME_DIR` in `compile.local.bat` (recommended) or in `compile.bat` / manual commands. Optionally set `LUNALIB` and `LAZYLIB` in `compile.local.bat` if you use versioned LunaLib/LazyLib folders.
+- **Game directory**: Set `$GameDir` in `compile.local.ps1`. Optionally set `$LunaLib`/`$LazyLib` if you use versioned LunaLib/LazyLib folders.
 - **Source**: `FactionRelationships/src/com/factionrelationships/`
 - **Output**: `dist/FactionRelationships-<version>/` and `dist/FactionRelationships-<version>.zip` (version from `mod_info.json`); JAR at `jars/FactionRelationships.jar` inside the package. The `dist/` folder is gitignored.

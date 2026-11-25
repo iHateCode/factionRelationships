@@ -2,9 +2,9 @@
     "id": "factionrelationships",
     "name": "Faction Relationships",
     "author": "boop",
-    "version": "1.5.11",
+    "version": "1.6.0",
     "description": "Shows a list of factions and their relationship with the player on the main navigation screen.",
-    "gameVersion": "0.98a-RC8",
+    "gameVersion": "0.98.5a-RC9",
     "jars": ["jars/FactionRelationships.jar"],
     "modPlugin": "com.factionrelationships.FactionRelationshipsPlugin",
     "dependencies": [

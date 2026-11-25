@@ -266,15 +266,37 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
         if (!showOverlay) {
             return;
         }
+        // The Codex renders above the campaign UI, so drawing the overlay here would
+        // cover it. Suppress only the draw; the visibility/auto-hide state above still
+        // ticks, so closing the Codex restores whatever the overlay was already doing.
+        if (Global.getSettings().isShowingCodex()) {
+            return;
+        }
+
+        // Prune expired entries before building the visible set so recently-changed
+        // faction IDs reflect only entries still within their display window.
+        RelationshipChangeStore.removeExpired();
+        Map<String, RelationshipChangeStore.RecentChange> recentChanges = RelationshipChangeStore.getRecentChanges();
+        boolean showChangeInOverlay = getShowRelationshipChangeInOverlay();
 
         Set<String> factionIdsWithMarkets = getFactionIdsToShow();
+
+        // When change annotations are enabled, temporarily add recently-changed
+        // faction IDs so they remain visible even if outside the current system.
+        Set<String> effectiveVisibleIds;
+        if (showChangeInOverlay && !recentChanges.isEmpty() && getShowOnlyFactionsInSystem()) {
+            effectiveVisibleIds = new HashSet<String>(factionIdsWithMarkets);
+            effectiveVisibleIds.addAll(recentChanges.keySet());
+        } else {
+            effectiveVisibleIds = factionIdsWithMarkets;
+        }
 
         List<FactionAPI> factions = new ArrayList<FactionAPI>();
         for (FactionAPI faction : Global.getSector().getAllFactions()) {
             if (faction.isPlayerFaction()) {
                 continue;
             }
-            if (!factionIdsWithMarkets.contains(faction.getId())) {
+            if (!effectiveVisibleIds.contains(faction.getId())) {
                 continue;
             }
             factions.add(faction);
@@ -304,10 +326,6 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
         if (count == 0) {
             return;
         }
-
-        RelationshipChangeStore.removeExpired();
-        Map<String, RelationshipChangeStore.RecentChange> recentChanges = RelationshipChangeStore.getRecentChanges();
-        boolean showChangeInOverlay = getShowRelationshipChangeInOverlay();
 
         float screenW = Global.getSettings().getScreenWidth();
         float screenH = Global.getSettings().getScreenHeight();

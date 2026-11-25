@@ -29,6 +29,13 @@ public class FactionRelationshipsCampaignInputListener implements CampaignInputL
         if (!FactionRelationshipsPlugin.isLunaLibEnabled()) {
             return;
         }
+        // This runs pre-core, so consuming the key here would steal it from the Codex.
+        // Clear any held state too: a key released while the Codex is open never
+        // reaches the key-up branch below, which would leave "Hold" mode stuck on.
+        if (Global.getSettings().isShowingCodex()) {
+            FactionRelationshipsPlugin.setOverlayKeyHeld(false);
+            return;
+        }
         Integer keycodeObj = LunaSettings.getInt(FactionRelationshipsPlugin.MOD_ID, "toggleOverlayKeybind");
         if (keycodeObj == null || keycodeObj.intValue() == 0) {
             FactionRelationshipsPlugin.setOverlayKeyHeld(false);

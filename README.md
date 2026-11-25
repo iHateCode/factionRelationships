@@ -4,7 +4,7 @@ A [Starsector](https://fractalsoftworks.com/) mod that shows a list of factions 
 
 ![Faction relationships in game](assets/screenshot.png)
 
-- **Game version**: 0.98a-RC8  
+- **Game version**: 0.98.5a-RC9  
 - **Mod ID**: `factionrelationships`
 - **Dependencies**: [LazyLib](https://fractalsoftworks.com/forum/index.php?topic=12771.0) and [LunaLib](https://github.com/Lukas22041/LunaLib) (required; enable them in the launcher).
 
@@ -50,15 +50,15 @@ Use this checklist for every release so update checks keep working:
   FactionRelationships.version
   ```
 
-4. Build with `FactionRelationships/compile.bat` (this produces both `dist/FactionRelationships-X.Y.Z.zip` and `dist/FactionRelationships.zip`).
+4. Build with `FactionRelationships/compile.ps1` (this produces both `dist/FactionRelationships-X.Y.Z.zip` and `dist/FactionRelationships.zip`).
 5. Attach `FactionRelationships.zip` to the GitHub release if `directDownloadURL` uses `.../releases/latest/download/FactionRelationships.zip`.
 6. Publish the release tag matching the same version (`vX.Y.Z`) so local installs can detect an update correctly.
 
 ## Building from source
 
-- **Requirements**: JDK 17, a Starsector 0.98a install (for API JARs), and **LunaLib** and **LazyLib** installed in your game `mods` folder (the build script needs their JARs).
-- **Build**: From the repo root, run `FactionRelationships\compile.bat`.  
-  Copy `FactionRelationships\compile.local.example.bat` to `FactionRelationships\compile.local.bat` and set `GAME_DIR` to your Starsector path (and optionally `LUNALIB` / `LAZYLIB` if you use versioned mod folders).
+- **Requirements**: JDK 17, a Starsector 0.98.5a install (for API JARs), and **LunaLib** and **LazyLib** installed in your game `mods` folder (the build script needs their JARs).
+- **Build**: From the repo root, run `powershell -ExecutionPolicy Bypass -File FactionRelationships\compile.ps1`.  
+  Copy `FactionRelationships\compile.local.example.ps1` to `FactionRelationships\compile.local.ps1` and set `$GameDir` to your Starsector path (and optionally `$LunaLib` / `$LazyLib` if you use versioned mod folders).
 - **Details**: See [FactionRelationships/COMPILATION.md](FactionRelationships/COMPILATION.md) for full build steps, project layout, and manual compile commands.
 
 ## License
