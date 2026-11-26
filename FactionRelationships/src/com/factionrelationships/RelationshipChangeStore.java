@@ -40,9 +40,14 @@ public final class RelationshipChangeStore {
         autoShowOverlayUntilMillis = 0L;
     }
 
-    /** Record a relationship change for a faction (overwrites any existing for that faction). Duration in milliseconds. */
+    /** Record a relationship change for a faction, added to any change still showing; restarts its display time. Duration in milliseconds. */
     public static void record(String factionId, float delta, long durationMs) {
-        RECENT_CHANGES.put(factionId, new RecentChange(delta, System.currentTimeMillis() + durationMs));
+        long now = System.currentTimeMillis();
+        // Add to a change still on screen, so two quick changes show their total
+        // rather than only the last one.
+        RecentChange existing = RECENT_CHANGES.get(factionId);
+        float total = (existing != null && existing.expiryTimeMillis >= now) ? existing.delta + delta : delta;
+        RECENT_CHANGES.put(factionId, new RecentChange(total, now + durationMs));
     }
 
     /** Get the current map of recent changes (read-only view; caller may prune via removeExpired). */

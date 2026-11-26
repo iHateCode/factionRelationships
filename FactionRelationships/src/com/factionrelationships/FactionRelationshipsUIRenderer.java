@@ -35,6 +35,9 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
     /** Reputation -50 in UI = -0.5f in API. */
     private static final float HOSTILE_THRESHOLD = -0.5f;
 
+    /** Grey for the "No factions in this system" line, distinct from any relationship colour. */
+    private static final Color EMPTY_LIST_COLOR = new Color(150, 150, 150);
+
     private static Integer cachedMaxFactions = null;
     private static Boolean cachedShowOnlyHostile = null;
     private static Boolean cachedShowRelationshipChangeInOverlay = null;
@@ -43,9 +46,15 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
     private static String cachedFont = null;
     private static Float cachedLineHeight = null;
 
-    /** Cache for "show only in system": only rebuild when location or settings change. */
+    /**
+     * Cache for "show only in system": rebuilt when location or settings change, and
+     * at least every CACHE_REFRESH_MS so a market changing owner while the player
+     * stays in the system (an invasion, decivilization) shows up.
+     */
+    private static final long CACHE_REFRESH_MS = 1000L;
     private static LocationAPI cachedFactionIdsLocation = null;
     private static Set<String> cachedFactionIdsForLocation = null;
+    private static long cachedFactionIdsBuiltAtMillis = 0L;
 
     /** When "show only in system" is on (Toggle mode), we auto-show the overlay when location changes. */
     private static LocationAPI lastSeenLocationForAutoShow = null;
@@ -60,7 +69,8 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
         cachedLineHeight = null;
         cachedFactionIdsLocation = null;
         cachedFactionIdsForLocation = null;
-        lastSeenLocationForAutoShow = null;
+        // lastSeenLocationForAutoShow is kept: clearing it made the next frame look
+        // like a location change, which opened the overlay on every settings save.
     }
 
     private static boolean getShowRelationshipChangeInOverlay() {
@@ -202,7 +212,9 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             return new HashSet<String>();
         }
 
-        if (loc == cachedFactionIdsLocation && cachedFactionIdsForLocation != null) {
+        long now = System.currentTimeMillis();
+        if (loc == cachedFactionIdsLocation && cachedFactionIdsForLocation != null
+                && now - cachedFactionIdsBuiltAtMillis < CACHE_REFRESH_MS) {
             return cachedFactionIdsForLocation;
         }
         Set<String> factionIds = new HashSet<String>();
@@ -219,6 +231,7 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
         }
         cachedFactionIdsLocation = loc;
         cachedFactionIdsForLocation = factionIds;
+        cachedFactionIdsBuiltAtMillis = now;
         return factionIds;
     }
 
@@ -249,16 +262,17 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             RelationshipChangeStore.clearAutoShowExpiry();
         }
         String mode = FactionRelationshipsPlugin.getOverlayKeybindMode();
-        if (getShowOnlyFactionsInSystem() && "Toggle".equals(mode)) {
-            LocationAPI loc = Global.getSector().getPlayerFleet().getContainingLocation();
-            if (loc != lastSeenLocationForAutoShow) {
-                FactionRelationshipsPlugin.setOverlayVisible(true);
-                int autoHideSec = FactionRelationshipsPlugin.getAutoHideOverlayAfterSeconds();
-                if (autoHideSec > 0) {
-                    RelationshipChangeStore.setAutoShowExpiry(System.currentTimeMillis() + autoHideSec * 1000L);
-                }
+        // Track the location every frame, not only while the setting is on, so turning
+        // the setting on later does not count as arriving somewhere new.
+        LocationAPI currentLoc = Global.getSector().getPlayerFleet().getContainingLocation();
+        boolean locationChanged = currentLoc != lastSeenLocationForAutoShow;
+        lastSeenLocationForAutoShow = currentLoc;
+        if (locationChanged && getShowOnlyFactionsInSystem() && "Toggle".equals(mode)) {
+            FactionRelationshipsPlugin.setOverlayVisible(true);
+            int autoHideSec = FactionRelationshipsPlugin.getAutoHideOverlayAfterSeconds();
+            if (autoHideSec > 0) {
+                RelationshipChangeStore.setAutoShowExpiry(System.currentTimeMillis() + autoHideSec * 1000L);
             }
-            lastSeenLocationForAutoShow = loc;
         }
         boolean showOverlay = "Hold".equals(mode)
             ? FactionRelationshipsPlugin.isOverlayKeyHeld()
@@ -302,6 +316,7 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
             factions.add(faction);
         }
 
+        boolean hadFactionsBeforeHostileFilter = !factions.isEmpty();
         if (getShowOnlyHostile()) {
             List<FactionAPI> hostileOnly = new ArrayList<FactionAPI>();
             for (FactionAPI faction : factions) {
@@ -323,14 +338,26 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
 
         int maxFactions = getMaxFactions();
         int count = Math.min(factions.size(), maxFactions);
-        if (count == 0) {
-            return;
-        }
 
         float screenW = Global.getSettings().getScreenWidth();
         float screenH = Global.getSettings().getScreenHeight();
         FontAndLineHeight fontAndLine = getFontAndLineHeight();
         float lineHeight = fontAndLine.lineHeight;
+
+        if (count == 0) {
+            // Without this, a visible overlay with nothing to list draws nothing at all,
+            // so pressing the toggle key looks like it does nothing.
+            boolean hostileFilterRemovedAll = getShowOnlyHostile() && hadFactionsBeforeHostileFilter;
+            String message = getEmptyListMessage(hostileFilterRemovedAll);
+            if (message != null) {
+                LabelAPI label = Global.getSettings().createLabel(message, fontAndLine.font);
+                label.setColor(EMPTY_LIST_COLOR);
+                float w = label.computeTextWidth(label.getText());
+                label.getPosition().setLocation(screenW - X_PAD - w, screenH - (Y_PAD + lineHeight));
+                label.render(1f);
+            }
+            return;
+        }
 
         List<LabelAPI> labels = new ArrayList<LabelAPI>();
         List<LabelAPI> deltaLabels = new ArrayList<LabelAPI>();
@@ -374,6 +401,26 @@ public class FactionRelationshipsUIRenderer implements CampaignUIRenderingListen
                 deltaLabel.render(1f);
             }
         }
+    }
+
+    /**
+     * The line shown when the overlay is visible but no faction passes the filters,
+     * or null to draw nothing. Hyperspace with "show full list in hyperspace" off
+     * stays blank, because the player chose to see no list there.
+     */
+    private static String getEmptyListMessage(boolean hostileFilterRemovedAll) {
+        boolean limitedToSystem = getShowOnlyFactionsInSystem();
+        if (limitedToSystem) {
+            LocationAPI loc = Global.getSector().getPlayerFleet().getContainingLocation();
+            if (loc == null || loc.isHyperspace()) {
+                if (!getShowFullListInHyperspace()) {
+                    return null;
+                }
+                limitedToSystem = false;
+            }
+        }
+        String what = hostileFilterRemovedAll ? "No hostile factions" : "No factions";
+        return limitedToSystem ? what + " in this system" : what;
     }
 
     private static String formatPercent(float value, boolean withPlus, boolean withParens) {

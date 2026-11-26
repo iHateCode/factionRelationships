@@ -31,8 +31,25 @@ public class FactionRelationshipsTimerScript implements EveryFrameScript {
     private long lastAdvanceWallMillis = -1L;
     private int lastProcessedDayIndex = -1;
 
+    /** The script registered for the current game; transient, replaced on each game load. */
+    private static FactionRelationshipsTimerScript current = null;
+
     public FactionRelationshipsTimerScript() {
         initSnapshot();
+        current = this;
+    }
+
+    /**
+     * Moves the baseline for one faction to its current standing. Called when the
+     * game reports a change itself, so the next poll does not record it a second time.
+     */
+    public static void noteCurrentRelationship(String factionId) {
+        FactionRelationshipsTimerScript script = current;
+        if (script == null || factionId == null
+                || Global.getSector() == null || Global.getSector().getPlayerFaction() == null) {
+            return;
+        }
+        script.repSnapshot.put(factionId, Global.getSector().getPlayerFaction().getRelationship(factionId));
     }
 
     @Override

@@ -2,7 +2,6 @@ package com.factionrelationships;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.BaseCampaignEventListener;
-import com.fs.starfarer.api.characters.PersonAPI;
 import lunalib.lunaSettings.LunaSettings;
 
 /**
@@ -41,24 +40,29 @@ public class FactionRelationshipChangeListener extends BaseCampaignEventListener
         if (FactionRelationshipsPlugin.isLunaLibEnabled()) {
             Boolean autoShow = LunaSettings.getBoolean(FactionRelationshipsPlugin.MOD_ID, AUTO_SHOW_SETTING);
             if (Boolean.TRUE.equals(autoShow)) {
-                FactionRelationshipsPlugin.setOverlayVisible(true);
-                int autoHideSec = FactionRelationshipsPlugin.getAutoHideOverlayAfterSeconds();
-                long hideAfterMs = (autoHideSec > 0) ? (autoHideSec * 1000L) : durationMs;
-                RelationshipChangeStore.setAutoShowExpiry(System.currentTimeMillis() + hideAfterMs);
+                // An overlay the player opened, with no hide time pending, is theirs:
+                // leave it open rather than starting a countdown that closes it.
+                long pendingExpiry = RelationshipChangeStore.getAutoShowExpiry();
+                if (!FactionRelationshipsPlugin.isOverlayVisible() || pendingExpiry > 0) {
+                    FactionRelationshipsPlugin.setOverlayVisible(true);
+                    int autoHideSec = FactionRelationshipsPlugin.getAutoHideOverlayAfterSeconds();
+                    long hideAfterMs = (autoHideSec > 0) ? (autoHideSec * 1000L) : durationMs;
+                    long expiry = System.currentTimeMillis() + hideAfterMs;
+                    RelationshipChangeStore.setAutoShowExpiry(Math.max(pendingExpiry, expiry));
+                }
             }
         }
     }
 
-    @Override
-    public void reportPlayerReputationChange(PersonAPI person, float delta) {
-        if (person == null || person.getFaction() == null) {
-            return;
-        }
-        reportPlayerReputationChange(person.getFaction().getId(), delta);
-    }
+    // reportPlayerReputationChange(PersonAPI, float) is deliberately not overridden.
+    // The game sends it when only that person's standing changed, so treating it as
+    // a change for their faction would show a faction change that never happened.
 
     @Override
     public void reportPlayerReputationChange(String factionId, float delta) {
         recordRelationshipChange(factionId, delta);
+        // The game reports after applying the change, so the timer's baseline can move
+        // to the new value now; otherwise its next poll records this same change again.
+        FactionRelationshipsTimerScript.noteCurrentRelationship(factionId);
     }
 }
